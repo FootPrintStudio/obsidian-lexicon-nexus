@@ -5,14 +5,23 @@ import {
 	getLexiconContextPaths,
 	isUnderDictionaryFolder,
 } from "./context";
+import {
+	filterGlobalIndexByContext,
+	needsAsyncScopeEnrichment,
+	resolveContextFilePaths,
+} from "./index/scoping";
 import type { DefinitionIndex, LexiconNexusSettings, ParseWarning } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
 import { normalizeSettings } from "./settingsUtil";
 import { debounce, rerenderAllMarkdownViews } from "./refresh";
 import { LexiconNexusSettingTab } from "./settings";
-import { findMatchForm } from "./match";
+import { findMatchAtCursor, findMatchForm } from "./match";
 import { processLexiconInElement } from "./reading/postprocess";
-import { LexiconPopoverManager, gotoDefinition, getWordAtCursor } from "./reading/popover";
+import {
+	LexiconPopoverManager,
+	gotoDefinition,
+	getEditorOrSelectionText,
+} from "./reading/popover";
 
 export default class LexiconNexusPlugin extends Plugin {
 	settings: LexiconNexusSettings = { ...DEFAULT_SETTINGS };
@@ -53,7 +62,10 @@ export default class LexiconNexusPlugin extends Plugin {
 		this.addCommand({
 			id: "goto-lexicon-definition",
 			name: "Go to lexicon definition",
-			editorCallback: () => void this.commandGotoDefinition(),
+			editorCallback: (_editor, view) => {
+				const mdView = view instanceof MarkdownView ? view : undefined;
+				void this.commandGotoDefinition(mdView);
+			},
 			callback: () => void this.commandGotoDefinition(),
 		});
 
@@ -99,6 +111,9 @@ export default class LexiconNexusPlugin extends Plugin {
 				rerenderAllMarkdownViews(this.app);
 			}),
 		);
+
+		const file = this.app.workspace.getActiveFile();
+		if (file) void this.prewarmScope(file.path);
 	}
 
 	onunload(): void {
@@ -113,15 +128,28 @@ export default class LexiconNexusPlugin extends Plugin {
 		const cache = this.app.metadataCache.getCache(sourcePath);
 		const paths = getLexiconContextPaths(cache?.frontmatter);
 		if (paths.length === 0) return this.globalIndex;
-		return this.scopedCache.get(sourcePath) ?? this.globalIndex;
+
+		const cached = this.scopedCache.get(sourcePath);
+		if (cached) return cached;
+
+		const allowedFiles = resolveContextFilePaths(this.app, paths);
+		const syncScoped = filterGlobalIndexByContext(this.globalIndex, allowedFiles);
+
+		if (needsAsyncScopeEnrichment(this.app, paths, this.globalIndex)) {
+			void this.prewarmScope(sourcePath);
+		}
+
+		return syncScoped;
 	}
 
 	async prewarmScope(sourcePath: string): Promise<void> {
 		const cache = this.app.metadataCache.getCache(sourcePath);
 		const paths = getLexiconContextPaths(cache?.frontmatter);
 		if (paths.length === 0) return;
+
 		const scoped = await buildScopedIndex(this.app, this.globalIndex, paths);
 		this.scopedCache.set(sourcePath, scoped);
+		rerenderAllMarkdownViews(this.app);
 	}
 
 	async loadSettings(): Promise<void> {
@@ -148,31 +176,43 @@ export default class LexiconNexusPlugin extends Plugin {
 			console.debug("[Lexicon Nexus] index warnings:", warnings);
 		}
 
+		const file = this.app.workspace.getActiveFile();
+		if (file) await this.prewarmScope(file.path);
+
 		rerenderAllMarkdownViews(this.app);
 		if (notify) {
 			new Notice(`Lexicon Nexus: indexed ${index.forms.length} match forms`);
 		}
 	}
 
-	async resolveIndexForContext(sourcePath: string): Promise<DefinitionIndex> {
-		await this.prewarmScope(sourcePath);
-		return this.getIndexForSource(sourcePath);
-	}
-
-	private async commandGotoDefinition(): Promise<void> {
-		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!view?.file) return;
-
-		const word = getWordAtCursor(view);
-		if (!word) {
-			new Notice("Lexicon Nexus: no word at cursor");
+	private async commandGotoDefinition(view?: MarkdownView): Promise<void> {
+		const activeView = view ?? this.app.workspace.getActiveViewOfType(MarkdownView);
+		const file = activeView?.file ?? this.app.workspace.getActiveFile();
+		if (!file) {
+			new Notice("Lexicon Nexus: no active note");
 			return;
 		}
 
-		const index = await this.resolveIndexForContext(view.file.path);
-		const form = findMatchForm(index, word, this.settings.caseSensitive);
+		const index = this.getIndexForSource(file.path);
+		const cachedAsync = this.scopedCache.get(file.path);
+		const resolvedIndex = cachedAsync ?? index;
+
+		let form = null;
+		const selected = getEditorOrSelectionText(activeView ?? null);
+		if (selected) {
+			form = findMatchForm(resolvedIndex, selected, this.settings.caseSensitive);
+		}
+		if (!form && activeView?.editor) {
+			const pos = activeView.editor.getCursor();
+			const line = activeView.editor.getLine(pos.line);
+			form = findMatchAtCursor(resolvedIndex, line, pos.ch, this.settings.caseSensitive);
+		}
+		if (!form && selected) {
+			form = findMatchForm(resolvedIndex, selected, this.settings.caseSensitive);
+		}
+
 		if (!form) {
-			new Notice(`Lexicon Nexus: no definition for "${word}"`);
+			new Notice("Lexicon Nexus: no definition at cursor or selection");
 			return;
 		}
 

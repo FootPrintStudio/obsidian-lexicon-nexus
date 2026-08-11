@@ -28,7 +28,9 @@ See [docs/GUIDE.md](docs/GUIDE.md) for the full grammar and requirements referen
 | Command | Description |
 |---------|-------------|
 | **Refresh lexicon index** | Rebuild index from dictionary folder |
-| **Go to lexicon definition** | Open dictionary file at term (cursor on word) |
+| **Go to lexicon definition** | Open dictionary file at term (selection, cursor, or word under cursor in editor) |
+
+In Reading view: select a term and run the command, click the source filename in the popover, Ctrl/Cmd+click a highlighted term, or middle-click a term.
 
 ## Settings
 

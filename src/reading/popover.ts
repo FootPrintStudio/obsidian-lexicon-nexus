@@ -3,6 +3,8 @@ import {
 	Component,
 	MarkdownRenderer,
 	MarkdownView,
+	Notice,
+	TFile,
 } from "obsidian";
 import type { LexiconEntry, LexiconNexusSettings } from "../types";
 
@@ -16,6 +18,15 @@ export class LexiconPopoverManager {
 
 	attach(el: HTMLElement, entry: LexiconEntry, settings: LexiconNexusSettings): void {
 		const trigger = settings.popoverTrigger;
+
+		el.addEventListener("click", (ev) => {
+			if (!ev.ctrlKey && !ev.metaKey) return;
+			ev.preventDefault();
+			ev.stopPropagation();
+			this.closeAll();
+			void gotoDefinition(this.app, entry);
+		});
+
 		if (trigger === "hover" || trigger === "both") {
 			el.addEventListener("mouseenter", () => {
 				if (this.pinnedEl && this.pinnedEl !== el) return;
@@ -29,6 +40,7 @@ export class LexiconPopoverManager {
 		}
 		if (trigger === "click" || trigger === "both") {
 			el.addEventListener("click", (ev) => {
+				if (ev.ctrlKey || ev.metaKey) return;
 				ev.preventDefault();
 				ev.stopPropagation();
 				if (this.pinnedEl === el) {
@@ -39,6 +51,14 @@ export class LexiconPopoverManager {
 				this.show(el, entry, settings, true);
 			});
 		}
+		el.addEventListener("auxclick", (ev) => {
+			if (ev.button === 1) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				this.closeAll();
+				void gotoDefinition(this.app, entry);
+			}
+		});
 	}
 
 	private show(
@@ -85,13 +105,30 @@ export class LexiconPopoverManager {
 			}
 			if (settings.showSourceFile) {
 				const base = entry.file.split("/").pop() ?? entry.file;
-				pop.createDiv({ cls: "lxn-popover-source", text: base });
+				const sourceRow = pop.createDiv({ cls: "lxn-popover-source" });
+				const link = sourceRow.createEl("a", {
+					cls: "lxn-popover-goto",
+					text: base,
+					href: "#",
+				});
+				link.setAttr("aria-label", `Open definition in ${entry.file}`);
+				link.addEventListener("click", (ev) => {
+					ev.preventDefault();
+					ev.stopPropagation();
+					this.closeAll();
+					void gotoDefinition(this.app, entry);
+				});
 			}
 		}
 
 		const body = pop.createDiv({ cls: "lxn-popover-body" });
-		const sourcePath = entry.file;
-		void MarkdownRenderer.render(this.app, entry.body || "*(empty)*", body, sourcePath, this.component);
+		void MarkdownRenderer.render(
+			this.app,
+			entry.body || "*(empty)*",
+			body,
+			entry.file,
+			this.component,
+		);
 
 		const rect = anchor.getBoundingClientRect();
 		pop.style.position = "fixed";
@@ -99,6 +136,11 @@ export class LexiconPopoverManager {
 		pop.style.top = `${rect.bottom + 6}px`;
 		pop.style.maxWidth = "320px";
 		pop.style.zIndex = "1000";
+	}
+
+	private closeAll(): void {
+		this.hideHover();
+		this.hidePinned();
 	}
 
 	hideHover(): void {
@@ -113,25 +155,28 @@ export class LexiconPopoverManager {
 	}
 
 	unload(): void {
-		this.hideHover();
-		this.hidePinned();
+		this.closeAll();
 		this.component.unload();
 	}
 }
 
-export async function gotoDefinition(
-	app: App,
-	entry: LexiconEntry,
-): Promise<void> {
+export async function gotoDefinition(app: App, entry: LexiconEntry): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(entry.file);
-	if (!file) return;
+	if (!(file instanceof TFile)) {
+		new Notice(`Lexicon Nexus: dictionary file not found: ${entry.file}`);
+		return;
+	}
 
 	const leaf = app.workspace.getLeaf(false);
-	await leaf.openFile(file as import("obsidian").TFile);
+	await leaf.openFile(file);
 	const view = app.workspace.getActiveViewOfType(MarkdownView);
 	if (view?.editor && entry.line > 0) {
-		view.editor.setCursor({ line: entry.line - 1, ch: 0 });
-		view.editor.scrollIntoView({ from: { line: entry.line - 1, ch: 0 }, to: { line: entry.line, ch: 0 } }, true);
+		const line = entry.line - 1;
+		view.editor.setCursor({ line, ch: 0 });
+		view.editor.scrollIntoView(
+			{ from: { line, ch: 0 }, to: { line: line + 1, ch: 0 } },
+			true,
+		);
 	}
 }
 
@@ -147,4 +192,12 @@ export function getWordAtCursor(view: MarkdownView): string {
 		if (pos.ch >= start && pos.ch <= end) return match[0]!;
 	}
 	return "";
+}
+
+/** Selected text in active window, or empty string. */
+export function getEditorOrSelectionText(view: MarkdownView | null): string {
+	const selection = window.getSelection()?.toString().trim();
+	if (selection) return selection;
+	if (!view) return "";
+	return getWordAtCursor(view);
 }

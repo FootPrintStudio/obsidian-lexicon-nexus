@@ -33,6 +33,16 @@
 	font-family: var(--font-monospace);
 }
 
+.lxn-popover-goto {
+	color: var(--text-accent);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.lxn-popover-goto:hover {
+	text-decoration: underline;
+}
+
 .lxn-popover-body :is(p, ul, ol) {
 	margin: 0.35em 0;
 }
