@@ -1,0 +1,42 @@
+.lxn-term {
+	text-decoration: underline;
+	text-decoration-style: dotted;
+	text-underline-offset: 2px;
+	cursor: help;
+	color: var(--text-accent);
+}
+
+.lxn-popover {
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.65rem 0.85rem;
+	box-shadow: var(--shadow-s);
+	font-size: var(--font-ui-small);
+}
+
+.lxn-popover-title {
+	font-weight: 600;
+	margin-bottom: 0.25rem;
+}
+
+.lxn-popover-aliases {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	margin-bottom: 0.35rem;
+}
+
+.lxn-popover-source {
+	color: var(--text-faint);
+	font-size: 0.75em;
+	margin-bottom: 0.35rem;
+	font-family: var(--font-monospace);
+}
+
+.lxn-popover-body :is(p, ul, ol) {
+	margin: 0.35em 0;
+}
+
+.lxn-popover.is-pinned {
+	border-color: var(--interactive-accent);
+}

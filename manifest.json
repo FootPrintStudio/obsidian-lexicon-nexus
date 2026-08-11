@@ -1,0 +1,10 @@
+{
+	"id": "lexicon-nexus",
+	"name": "Lexicon Nexus",
+	"version": "0.1.0",
+	"minAppVersion": "1.5.0",
+	"description": "Vault glossary — consolidated Lexicon files, Reading view highlights, hover and click popovers.",
+	"author": "FootPrintStudio",
+	"authorUrl": "https://github.com/FootPrintStudio",
+	"isDesktopOnly": false
+}
