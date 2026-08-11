@@ -13,6 +13,22 @@ Repository: [FootPrintStudio/obsidian-lexicon-nexus](https://github.com/FootPrin
 
 See **Settings → Guide** in Obsidian for the full language reference and optional requirements.
 
+## Installation
+
+### Manual (development)
+
+Clone into `.obsidian/plugins/lexicon-nexus/`, run `bash build.sh`, enable under Community plugins.
+
+### BRAT (beta install)
+
+Not in the Obsidian Community Plugins catalog. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat):
+
+1. Enable **BRAT** in Community Plugins.
+2. **Add Beta plugin** → `FootPrintStudio/obsidian-lexicon-nexus`
+3. Install or update from BRAT when [releases](https://github.com/FootPrintStudio/obsidian-lexicon-nexus/releases) are published.
+
+BRAT requires a GitHub Release with `main.js`, `manifest.json`, `styles.css`, and `versions.json` attached.
+
 ## Entry format (summary)
 
 ```markdown
