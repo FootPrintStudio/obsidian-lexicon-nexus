@@ -7,6 +7,12 @@ export interface LexiconNexusSettings {
 	caseSensitive: boolean;
 	showSourceFile: boolean;
 	debugMode: boolean;
+	/** 0 = unlimited. Reading highlights skip when form count exceeds this. */
+	maxHighlightForms: number;
+	/** 0 = unlimited. Text nodes longer than this are not scanned. */
+	maxTextNodeLength: number;
+	/** Re-render a note's Reading view when its frontmatter changes (lexicon-context). */
+	refreshOnMetadataChange: boolean;
 }
 
 export const DEFAULT_SETTINGS: LexiconNexusSettings = {
@@ -16,6 +22,9 @@ export const DEFAULT_SETTINGS: LexiconNexusSettings = {
 	caseSensitive: false,
 	showSourceFile: true,
 	debugMode: false,
+	maxHighlightForms: 2500,
+	maxTextNodeLength: 10_000,
+	refreshOnMetadataChange: false,
 };
 
 export type LexiconRequirement =
@@ -87,6 +96,8 @@ export interface DefinitionIndex {
 	forms: MatchForm[];
 	/** Sorted longest text first for scanning. */
 	sortedForms: MatchForm[];
+	/** Forms grouped by first character (lowercase) to reduce scan work. */
+	formsByFirstChar: Map<string, MatchForm[]>;
 }
 
 export function entryId(file: string, line: number, term: string): string {

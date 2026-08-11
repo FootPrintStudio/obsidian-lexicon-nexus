@@ -1,5 +1,6 @@
 import type { App, MarkdownPostProcessorContext } from "obsidian";
 import { scanText, shouldSkipElement } from "../index/scanner";
+import { resolvePerformanceLimits, shouldSkipHighlighting, shouldSkipTextNode } from "../performance";
 import type { DefinitionIndex, LexiconNexusSettings } from "../types";
 import { LexiconPopoverManager } from "./popover";
 
@@ -14,8 +15,11 @@ export function processLexiconInElement(
 	if (!settings.enableInReadingView) return;
 	if (index.sortedForms.length === 0) return;
 
+	const limits = resolvePerformanceLimits(settings);
+	if (shouldSkipHighlighting(index, limits)) return;
+
 	const onceSeen = new Set<string>();
-	walkElement(app, element, ctx, index, settings, popoverManager, onceSeen);
+	walkElement(app, element, ctx, index, settings, popoverManager, onceSeen, limits);
 }
 
 function walkElement(
@@ -26,18 +30,16 @@ function walkElement(
 	settings: LexiconNexusSettings,
 	popoverManager: LexiconPopoverManager,
 	onceSeen: Set<string>,
+	limits: ReturnType<typeof resolvePerformanceLimits>,
 ): void {
 	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
 		acceptNode(node) {
 			const parent = node.parentElement;
 			if (!parent) return NodeFilter.FILTER_REJECT;
 			if (parent.closest(`.lxn-term, script, style`)) return NodeFilter.FILTER_REJECT;
-			if (parent.closest("code, pre")) return NodeFilter.FILTER_REJECT;
-			if (parent.closest("a")) {
-				// still allow if no entry has noLink - checked per match
-			}
 			const text = node.textContent ?? "";
 			if (!text.trim()) return NodeFilter.FILTER_REJECT;
+			if (shouldSkipTextNode(text.length, limits)) return NodeFilter.FILTER_REJECT;
 			return NodeFilter.FILTER_ACCEPT;
 		},
 	});
@@ -51,8 +53,10 @@ function walkElement(
 	for (const textNode of textNodes) {
 		try {
 			processTextNode(app, textNode, ctx, index, settings, popoverManager, onceSeen);
-		} catch {
-			// skip node on error
+		} catch (e) {
+			if (settings.debugMode) {
+				console.debug("[Lexicon Nexus] post-process node error:", e);
+			}
 		}
 	}
 }

@@ -1,18 +1,19 @@
 import {
 	App,
 	Component,
-	MarkdownRenderer,
 	MarkdownView,
 	Notice,
 	TFile,
 } from "obsidian";
 import type { LexiconEntry, LexiconNexusSettings } from "../types";
+import { renderDefinitionPreview } from "../ui/renderDefinitionPreview";
 
 export class LexiconPopoverManager {
 	private pinnedEl: HTMLElement | null = null;
 	private hoverEl: HTMLElement | null = null;
 	private hoverTimer: ReturnType<typeof setTimeout> | undefined;
 	private component = new Component();
+	private pinnedDocListener: ((ev: MouseEvent) => void) | null = null;
 
 	constructor(private app: App) {}
 
@@ -77,13 +78,17 @@ export class LexiconPopoverManager {
 		if (pin) {
 			this.pinnedEl = anchor;
 			pop.classList.add("is-pinned");
-			const onDocClick = (ev: MouseEvent) => {
+			this.removePinnedDocListener();
+			this.pinnedDocListener = (ev: MouseEvent) => {
 				if (!pop.contains(ev.target as Node) && ev.target !== anchor) {
 					this.hidePinned();
-					document.removeEventListener("click", onDocClick, true);
 				}
 			};
-			setTimeout(() => document.addEventListener("click", onDocClick, true), 0);
+			setTimeout(() => {
+				if (this.pinnedDocListener) {
+					document.addEventListener("click", this.pinnedDocListener, true);
+				}
+			}, 0);
 		} else {
 			this.hoverEl = pop;
 		}
@@ -97,38 +102,12 @@ export class LexiconPopoverManager {
 		settings: LexiconNexusSettings,
 		anchor: HTMLElement,
 	): void {
-		if (!entry.plainPopover) {
-			pop.createDiv({ cls: "lxn-popover-title", text: entry.term });
-			if (entry.aliases.length > 0) {
-				const aliasText = entry.aliases.map((a) => a.name).join(", ");
-				pop.createDiv({ cls: "lxn-popover-aliases", text: aliasText });
-			}
-			if (settings.showSourceFile) {
-				const base = entry.file.split("/").pop() ?? entry.file;
-				const sourceRow = pop.createDiv({ cls: "lxn-popover-source" });
-				const link = sourceRow.createEl("a", {
-					cls: "lxn-popover-goto",
-					text: base,
-					href: "#",
-				});
-				link.setAttr("aria-label", `Open definition in ${entry.file}`);
-				link.addEventListener("click", (ev) => {
-					ev.preventDefault();
-					ev.stopPropagation();
-					this.closeAll();
-					void gotoDefinition(this.app, entry);
-				});
-			}
-		}
-
-		const body = pop.createDiv({ cls: "lxn-popover-body" });
-		void MarkdownRenderer.render(
-			this.app,
-			entry.body || "*(empty)*",
-			body,
-			entry.file,
-			this.component,
-		);
+		renderDefinitionPreview(this.app, pop, entry, settings, this.component, {
+			onOpenFile: () => {
+				this.closeAll();
+				void gotoDefinition(this.app, entry);
+			},
+		});
 
 		const rect = anchor.getBoundingClientRect();
 		pop.style.position = "fixed";
@@ -151,11 +130,20 @@ export class LexiconPopoverManager {
 
 	hidePinned(): void {
 		this.pinnedEl = null;
+		this.removePinnedDocListener();
 		document.querySelectorAll(".lxn-popover.is-pinned").forEach((el) => el.remove());
+	}
+
+	private removePinnedDocListener(): void {
+		if (this.pinnedDocListener) {
+			document.removeEventListener("click", this.pinnedDocListener, true);
+			this.pinnedDocListener = null;
+		}
 	}
 
 	unload(): void {
 		this.closeAll();
+		this.removePinnedDocListener();
 		this.component.unload();
 	}
 }

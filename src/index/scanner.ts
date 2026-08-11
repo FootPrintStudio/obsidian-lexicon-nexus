@@ -68,13 +68,21 @@ export function scanText(
 ): TextMatch[] {
 	const raw: TextMatch[] = [];
 	for (let pos = 0; pos < text.length; pos++) {
-		for (const form of index.sortedForms) {
+		const candidates = candidatesAt(index, text, pos);
+		for (const form of candidates) {
 			if (form.entry.once && onceSeen?.has(form.entry.id)) continue;
 			if (!formMatchesAt(text, pos, form, globalCaseSensitive)) continue;
 			raw.push({ start: pos, end: pos + form.text.length, form });
 		}
 	}
 	return resolveOverlaps(raw, onceSeen);
+}
+
+function candidatesAt(index: DefinitionIndex, text: string, pos: number): MatchForm[] {
+	const ch = text[pos]?.toLowerCase();
+	if (!ch) return index.sortedForms;
+	const bucket = index.formsByFirstChar.get(ch);
+	return bucket ?? [];
 }
 
 export function shouldSkipElement(el: Element, entry: import("../types").LexiconEntry): boolean {

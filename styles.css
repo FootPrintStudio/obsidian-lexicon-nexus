@@ -50,3 +50,220 @@
 .lxn-popover.is-pinned {
 	border-color: var(--interactive-accent);
 }
+
+/* Definition browser modal */
+.modal.lxn-browser-modal-shell {
+	width: min(920px, 92vw);
+}
+
+.lxn-browser-modal {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	min-height: 480px;
+}
+
+.lxn-browser-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.lxn-browser-search {
+	width: 100%;
+	padding: 0.45rem 0.55rem;
+	font-size: var(--font-ui-medium);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--input-radius);
+	background: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.lxn-browser-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+}
+
+.lxn-browser-filters-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	flex-shrink: 0;
+}
+
+.lxn-browser-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+.lxn-browser-chip {
+	font-size: var(--font-ui-small);
+	padding: 0.15rem 0.5rem;
+	border-radius: 999px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.lxn-browser-chip.is-enabled {
+	border-color: var(--interactive-accent);
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.lxn-browser-body {
+	display: flex;
+	flex: 1;
+	gap: 0.65rem;
+	min-height: 360px;
+}
+
+.lxn-browser-list-pane {
+	flex: 0 0 34%;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-secondary);
+}
+
+.lxn-browser-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 0.25rem;
+}
+
+.lxn-browser-list-item {
+	padding: 0.4rem 0.5rem;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.lxn-browser-list-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.lxn-browser-list-item.is-selected {
+	background: var(--background-modifier-active-hover);
+}
+
+.lxn-browser-list-term {
+	font-weight: 500;
+}
+
+.lxn-browser-list-file {
+	color: var(--text-faint);
+	font-size: 0.75em;
+	font-family: var(--font-monospace);
+	margin-top: 0.1rem;
+}
+
+.lxn-browser-empty {
+	padding: 0.65rem 0.75rem;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.lxn-browser-preview-pane {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+}
+
+.lxn-browser-preview-actions {
+	display: flex;
+	justify-content: flex-end;
+	padding: 0.45rem 0.65rem 0;
+}
+
+.lxn-browser-open-btn {
+	font-size: var(--font-ui-small);
+	padding: 0.25rem 0.55rem;
+	cursor: pointer;
+}
+
+.lxn-browser-preview {
+	flex: 1;
+	overflow-y: auto;
+	padding: 0.65rem 0.85rem;
+}
+
+.lxn-browser-preview-placeholder {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.lxn-browser-requirements {
+	margin-top: 0.75rem;
+	padding-top: 0.55rem;
+	border-top: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-monospace);
+}
+
+.lxn-browser-requirements-label {
+	color: var(--text-faint);
+}
+
+/* Settings tabs */
+.lxn-settings-tabs {
+	display: flex;
+	gap: 0;
+	margin: 0.75rem 0 1rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.lxn-settings-tab {
+	padding: 0.45rem 0.9rem;
+	cursor: pointer;
+	color: var(--text-muted);
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	user-select: none;
+}
+
+.lxn-settings-tab:hover {
+	color: var(--text-normal);
+}
+
+.lxn-settings-tab.is-active {
+	color: var(--text-accent);
+	border-bottom-color: var(--interactive-accent);
+	font-weight: 600;
+}
+
+.lxn-readme-panel,
+.lxn-guide-panel {
+	max-height: 70vh;
+	overflow-y: auto;
+	padding-right: 0.5rem;
+}
+
+.lxn-index-info {
+	margin: 0.5rem 0 0.75rem;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.lxn-warnings-box {
+	margin: 0.5rem 0 1rem;
+	padding: 0.55rem 0.75rem;
+	border: 1px solid var(--color-orange);
+	border-radius: 6px;
+	background: var(--background-secondary);
+	font-size: var(--font-ui-small);
+}
+
+.lxn-warnings-list {
+	margin: 0.35rem 0 0;
+	padding-left: 1.2rem;
+}

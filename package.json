@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-lexicon-nexus",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Lexicon Nexus — vault glossary with Reading view highlights and popovers.",
 	"main": "main.js",
 	"type": "module",
